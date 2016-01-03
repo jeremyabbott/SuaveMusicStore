@@ -25,6 +25,7 @@ let main argv =
             path Path.Store.overview >>= OK "Store"
             path Path.Store.browse >>= browse
             pathScan Path.Store.details (fun id -> OK (sprintf "Details: %d" id))
+            pathRegex "(.*)\.(css|png)" >>= Files.browseHome
         ]
 
     startWebServer defaultConfig webPart
