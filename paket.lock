@@ -22,8 +22,11 @@ NUGET
     SourceLink.Fake (1.1.0)
     Suave (0.33.0)
       FSharp.Core (>= 3.1.2.5)
+    Suave.Experimental (0.33.0)
+      FSharp.Core (>= 3.1.2.5)
+      Suave (>= 0.33.0)
 GITHUB
   remote: fsharp/FAKE
   specs:
-    modules/Octokit/Octokit.fsx (7d1a6f8e48d1e2e1e3246ea24a4de05cccc8ce64)
+    modules/Octokit/Octokit.fsx (3834900476aed462f35ce3acc3ea5c4708971e43)
       Octokit
