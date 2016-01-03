@@ -75,12 +75,6 @@
   -->
   <Import Project="..\..\.paket\paket.targets" />
   <ItemGroup>
-    <ProjectReference Include="..\..\src\SuaveMusicStore\SuaveMusicStore.fsproj">
-      <Project>{BF46582E-BC21-4545-9425-0EBBD6EB9608}</Project>
-      <Name>SuaveMusicStore</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Reference Include="nunit.framework">
       <HintPath>..\..\packages\NUnit\lib\nunit.framework.dll</HintPath>
       <Private>True</Private>
