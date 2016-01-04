@@ -20,6 +20,7 @@ NUGET
     Octokit (0.17.0)
       Microsoft.Net.Http
     SourceLink.Fake (1.1.0)
+    SQLProvider (0.0.9-alpha)
     Suave (0.33.0)
       FSharp.Core (>= 3.1.2.5)
     Suave.Experimental (0.33.0)
