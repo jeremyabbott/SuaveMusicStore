@@ -38,7 +38,6 @@ let main argv =
         choose [
             path Path.home >>= html View.home
             path Path.Store.overview >>= overview
-           // path Path.Store.overview >>= html (View.store ["Rock"; "Disco"; "Pop"])
             path Path.Store.browse >>= browse
             pathScan Path.Store.details (fun id -> html (View.details id))
             pathRegex "(.*)\.(css|png)" >>= Files.browseHome
