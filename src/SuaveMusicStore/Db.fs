@@ -37,3 +37,14 @@ let getContext() = Sql.GetDataContext()
 
 let getAlbumsDetails (ctx : DbContext) : AlbumDetails list =
     ctx.``[dbo].[AlbumDetails]`` |> Seq.toList
+
+let getAlbum id (ctx: DbContext) : Album option =
+    query {
+        for album in ctx.``[dbo].[Albums]`` do
+            where (album.AlbumId = id)
+            select album
+    } |> firstOrNone
+
+let deleteAlbum (album : Album) (ctx : DbContext) =
+    album.Delete()
+    ctx.SubmitUpdates()
