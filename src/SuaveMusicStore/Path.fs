@@ -16,3 +16,4 @@ module Admin =
     let manage = "/admin/manage"
     let deleteAlbum : IntPath = "/admin/delete/%d"
     let createAlbum = "/admin/create"
+    let editAlbum : IntPath = "/admin/edit/%d"
