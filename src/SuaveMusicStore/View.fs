@@ -12,6 +12,7 @@ let h2 s = tag "h2" [] (text s)
 let aHref href = tag "a" ["href", href]
 
 let ul xml = tag "ul" [] (flatten xml)
+let ulAttr attr xml = tag "ul" attr (flatten xml)
 let li = tag "li" []
 
 let cssLink href = linkAttr ["href", href; "rel", "stylesheet"; "type", "text/css"]
@@ -75,6 +76,15 @@ let truncate k (s: string) =
         s.Substring(0, k - 3) + "..."
     else s
 
+// Views
+
+let partNav = 
+    ulAttr ["id", "navlist"] [ 
+        li (aHref Path.home (text "Home"))
+        li (aHref Path.Store.overview (text "Store"))
+        li (aHref Path.Admin.manage (text "Admin"))
+    ]
+
 let home = [
     h2 "Home"
 ]
@@ -125,6 +135,7 @@ let index container =
         body [
             divId "header" [
                 h1 (aHref Path.home (text "F# Suave Music Store"))
+                partNav
             ]
 
             divId "main" container
