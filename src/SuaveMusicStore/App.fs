@@ -3,6 +3,7 @@
 
 module SuaveMusicStore.App
 
+open System
 open Suave
 open Suave.Http
 open Suave.Types
@@ -12,6 +13,29 @@ open Suave.Http.Successful
 open Suave.Web
 open Suave.Form
 open Suave.Model.Binding
+open Suave.State.CookieStateStore
+
+let passHash (pass: string) =
+    use sha = Security.Cryptography.SHA256.Create()
+    Text.Encoding.UTF8.GetBytes(pass)
+    |> sha.ComputeHash
+    |> Array.map (fun b -> b.ToString("x2"))
+    |> String.concat ""
+
+let session = statefulForSession
+
+let sessionStore setF = context (fun x ->
+    match HttpContext.state x with
+    | Some state -> setF state
+    | None -> never)
+
+let returnPathOrHome = 
+    request (fun x -> 
+        let path = 
+            match (x.queryParam "returnPath") with
+            | Choice1Of2 path -> path
+            | _ -> Path.home
+        Redirection.FOUND path)
 
 let html container =
     OK (View.index container)
@@ -100,8 +124,23 @@ let main argv =
             never
 
     let logon =
-        View.logon
-        |> html
+        choose [
+            GET >>= (View.logon "" |> html)
+            POST >>= bindToForm Form.logon (fun form ->
+                let ctx = Db.getContext()
+                let (Password password) = form.Password
+                match Db.validateUser(form.Username, passHash password) ctx with
+                | Some user ->
+                        Auth.authenticated Cookie.CookieLife.Session false 
+                        >>= session
+                        >>= sessionStore (fun store ->
+                            store.set "username" user.UserName
+                            >>= store.set "role" user.Role)
+                        >>= returnPathOrHome
+                | _ ->
+                    View.logon "Username or password is invalid." |> html
+            )
+        ]
 
     let webPart =
         choose [
