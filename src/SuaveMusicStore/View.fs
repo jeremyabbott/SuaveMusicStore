@@ -261,3 +261,21 @@ let editAlbum (album : Db.Album) genres artists = [
         aHref Path.Admin.manage (text "Back to list")
     ]
 ]
+
+let logon = [
+    h2 "Log On"
+    p [
+        text "Please enter your user name and password."
+    ]
+
+    renderForm
+        { Form = Form.logon
+          Fieldsets = 
+              [ { Legend = "Account Information"
+                  Fields = 
+                      [ { Label = "User Name"
+                          Xml = input (fun f -> <@ f.Username @>) [] }
+                        { Label = "Password"
+                          Xml = input (fun f -> <@ f.Password @>) [] } ] } ]
+          SubmitText = "Log On" }
+]

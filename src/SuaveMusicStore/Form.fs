@@ -17,3 +17,10 @@ let album : Form<Album> =
          ],
          []
     )
+
+type Logon = {
+    Username : string
+    Password : Password
+}
+
+let logon : Form<Logon> = Form ([],[])

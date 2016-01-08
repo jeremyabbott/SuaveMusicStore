@@ -99,6 +99,10 @@ let main argv =
         | None -> 
             never
 
+    let logon =
+        View.logon
+        |> html
+
     let webPart =
         choose [
             path Path.home >>= html View.home
@@ -109,6 +113,7 @@ let main argv =
             pathScan Path.Admin.deleteAlbum deleteAlbum
             path Path.Admin.createAlbum >>= createAlbum
             pathScan Path.Admin.editAlbum editAlbum
+            path Path.Account.logon >>= logon
             pathRegex "(.*)\.(css|png|gif)" >>= Files.browseHome
             html View.notFound
         ]
