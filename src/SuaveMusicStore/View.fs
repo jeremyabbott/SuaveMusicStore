@@ -78,6 +78,7 @@ let truncate k (s: string) =
 
 // Views
 
+// Partials
 let partNav = 
     ulAttr ["id", "navlist"] [ 
         li (aHref Path.home (text "Home"))
@@ -85,6 +86,18 @@ let partNav =
         li (aHref Path.Admin.manage (text "Admin"))
     ]
 
+
+let partUser (user : string option) = 
+    divId "part-user" [
+        match user with
+        | Some user -> 
+            yield text (sprintf "Logged on as %s, " user)
+            yield aHref Path.Account.logoff (text "Log off")
+        | None ->
+            yield aHref Path.Account.logon (text "Log on")
+    ]
+
+// Pages
 let home = [
     h2 "Home"
 ]
@@ -136,6 +149,7 @@ let index container =
             divId "header" [
                 h1 (aHref Path.home (text "F# Suave Music Store"))
                 partNav
+                partUser (None)
             ]
 
             divId "main" container
