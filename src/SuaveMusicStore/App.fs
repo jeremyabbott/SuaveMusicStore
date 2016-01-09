@@ -22,7 +22,24 @@ let passHash (pass: string) =
     |> Array.map (fun b -> b.ToString("x2"))
     |> String.concat ""
 
-let session = statefulForSession
+type UserLoggedOnSession = {
+    Username : string
+    Role : string
+}
+
+type Session = 
+    | NoSession
+    | UserLoggedOn of UserLoggedOnSession
+
+let session f =
+    statefulForSession
+    >>= context (fun x ->
+        match x |> HttpContext.state with
+        | None -> f NoSession
+        | Some state ->
+            match state.get "username", state.get "role" with
+            | Some username, Some role -> f (UserLoggedOn {Username = username; Role = role})
+            | _ -> f NoSession)
 
 let sessionStore setF = context (fun x ->
     match HttpContext.state x with
@@ -132,7 +149,7 @@ let main argv =
                 match Db.validateUser(form.Username, passHash password) ctx with
                 | Some user ->
                         Auth.authenticated Cookie.CookieLife.Session false 
-                        >>= session
+                        >>= session (fun _ -> succeed)
                         >>= sessionStore (fun store ->
                             store.set "username" user.UserName
                             >>= store.set "role" user.Role)
