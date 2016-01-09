@@ -14,6 +14,7 @@ open Suave.Web
 open Suave.Form
 open Suave.Model.Binding
 open Suave.State.CookieStateStore
+open Suave.Cookie
 
 let passHash (pass: string) =
     use sha = Security.Cryptography.SHA256.Create()
@@ -46,6 +47,16 @@ let sessionStore setF = context (fun x ->
     | Some state -> setF state
     | None -> never)
 
+let reset =
+    unsetPair Auth.SessionAuthCookie
+    >>= unsetPair StateCookie
+    >>= Redirection.FOUND Path.home
+
+let redirectWithReturnPath redirection =
+    request (fun x ->
+        let path = x.url.AbsolutePath
+        Redirection.FOUND (redirection |> Path.withParam ("returnPath", path)))
+
 let returnPathOrHome = 
     request (fun x -> 
         let path = 
@@ -54,9 +65,29 @@ let returnPathOrHome =
             | _ -> Path.home
         Redirection.FOUND path)
 
+let loggedOn f_success =
+    Auth.authenticate
+        Cookie.CookieLife.Session
+        false
+        (fun () -> Choice2Of2(redirectWithReturnPath Path.Account.logon))
+        (fun _ -> Choice2Of2 reset)
+        f_success
+
+let admin f_success =
+    loggedOn (session (function
+        | UserLoggedOn { Role = "admin" } -> f_success
+        | UserLoggedOn _ -> FORBIDDEN "Only for admin"
+        | _ -> UNAUTHORIZED "Not logged in"
+    ))
+
 let html container =
-    OK (View.index container)
-    >>= Writers.setMimeType "text/html; charset=utf-8"
+    let result user =
+        OK (View.index (View.partUser user) container)
+        >>= Writers.setMimeType "text/html; charset=utf-8"
+
+    session (function
+    | UserLoggedOn { Username = username } -> result (Some username)
+    | _ -> result None)
 
 let bindToForm form handler =
     bindReq (bindForm form) handler BAD_REQUEST
@@ -165,11 +196,12 @@ let main argv =
             path Path.Store.overview >>= overview
             path Path.Store.browse >>= browse
             pathScan Path.Store.details details
-            path Path.Admin.manage >>= manage
-            pathScan Path.Admin.deleteAlbum deleteAlbum
-            path Path.Admin.createAlbum >>= createAlbum
-            pathScan Path.Admin.editAlbum editAlbum
+            path Path.Admin.manage >>= admin manage
+            path Path.Admin.createAlbum >>= admin createAlbum
+            pathScan Path.Admin.editAlbum (fun id -> admin (editAlbum id))
+            pathScan Path.Admin.deleteAlbum (fun id -> admin (deleteAlbum id))
             path Path.Account.logon >>= logon
+            path Path.Account.logoff >>= reset
             pathRegex "(.*)\.(css|png|gif)" >>= Files.browseHome
             html View.notFound
         ]

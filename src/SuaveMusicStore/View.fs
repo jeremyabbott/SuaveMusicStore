@@ -138,7 +138,7 @@ let details (album : Db.AlbumDetails) = [
     ]
 ]
 
-let index container =
+let index partUser container =
     html [
         head [
             title "Suave Music Store"
@@ -149,7 +149,7 @@ let index container =
             divId "header" [
                 h1 (aHref Path.home (text "F# Suave Music Store"))
                 partNav
-                partUser (None)
+                partUser
             ]
 
             divId "main" container
