@@ -358,3 +358,25 @@ let register msg = [
                           Xml = input (fun f -> <@ f.ConfirmPassword @>) [] } ] } ]
           SubmitText = "Register" }
 ]
+
+let checkout = [
+    h2 "Address And Payment"
+    renderForm
+        { Form = Form.checkout 
+          Fieldsets = 
+              [ { Legend = "Shipping Information"
+                  Fields = 
+                      [ { Label = "First Name"
+                          Xml = input (fun f -> <@ f.FirstName @>) [] }
+                        { Label = "Last Name"
+                          Xml = input (fun f -> <@ f.LastName @>) [] }
+                        { Label = "Address"
+                          Xml = input (fun f -> <@ f.Address @>) [] } ] }
+
+                { Legend = "Payment"
+                  Fields = 
+                      [ { Label = "Promo Code"
+                          Xml = input (fun f -> <@ f.PromoCode @>) [] } ] } ]
+          SubmitText = "Submit Order"
+        }
+]
