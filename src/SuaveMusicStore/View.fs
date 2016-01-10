@@ -80,14 +80,13 @@ let truncate k (s: string) =
 // Views
 
 // Partials
-let partNav = 
+let partNav cartItems = 
     ulAttr ["id", "navlist"] [ 
         li (aHref Path.home (text "Home"))
         li (aHref Path.Store.overview (text "Store"))
-        li (aHref Path.Cart.overview (text "Cart"))
+        li (aHref Path.Cart.overview (text (sprintf "Cart (%d)" cartItems)))
         li (aHref Path.Admin.manage (text "Admin"))
     ]
-
 
 let partUser (user : string option) = 
     divId "part-user" [
@@ -143,7 +142,7 @@ let details (album : Db.AlbumDetails) = [
     ]
 ]
 
-let index partUser container =
+let index partNav partUser container =
     html [
         head [
             title "Suave Music Store"
