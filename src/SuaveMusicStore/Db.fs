@@ -89,3 +89,10 @@ let addToCart cartId albumId (ctx : DbContext)  =
     | None ->
         ctx.``[dbo].[Carts]``.Create(albumId, cartId, 1, DateTime.UtcNow) |> ignore
     ctx.SubmitUpdates()
+
+let getCartsDetails cartId (ctx : DbContext) : CartDetails list =
+    query {
+        for cart in ctx.``[dbo].[CartDetails]`` do
+            where (cart.CartId = cartId)
+            select cart
+    } |> Seq.toList

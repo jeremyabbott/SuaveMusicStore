@@ -39,8 +39,9 @@ let session f =
         match x |> HttpContext.state with
         | None -> f NoSession
         | Some state ->
-            match state.get "username", state.get "role" with
-            | Some username, Some role -> f (UserLoggedOn {Username = username; Role = role})
+            match state.get "cartid", state.get "username", state.get "role" with
+            | Some cartId, None, None -> f (CartIdOnly cartId)
+            | _, Some username, Some role -> f (UserLoggedOn {Username = username; Role = role})
             | _ -> f NoSession)
 
 let sessionStore setF = context (fun x ->
@@ -189,7 +190,12 @@ let logon =
         )
     ]
 
-let cart = View.cart [] |> html
+let cart = 
+    session (function
+    | NoSession -> View.emptyCart |> html
+    | UserLoggedOn { Username = cartId } | CartIdOnly cartId ->
+        let ctx = Db.getContext()
+        Db.getCartsDetails cartId ctx |> View.cart |> html)
 
 let addToCart albumId =
     let ctx = Db.getContext()
