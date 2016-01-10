@@ -118,3 +118,15 @@ let upgradeCarts (cartId : string, username :string) (ctx : DbContext) =
         | None ->
             cart.CartId <- username
     ctx.SubmitUpdates()
+
+let getUser username (ctx : DbContext) : User option = 
+    query {
+        for user in ctx.``[dbo].[Users]`` do
+        where (user.UserName = username)
+        select user
+    } |> firstOrNone
+
+let newUser (username, password, email) (ctx : DbContext) =
+    let user = ctx.``[dbo].[Users]``.Create(email, password, "user", username)
+    ctx.SubmitUpdates()
+    user

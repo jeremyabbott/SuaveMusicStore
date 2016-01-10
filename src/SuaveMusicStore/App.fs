@@ -178,6 +178,19 @@ let editAlbum id =
     | None -> 
         never
 
+let authenticateUser (user : Db.User) =
+    Auth.authenticated Cookie.CookieLife.Session false 
+    >>= session (function
+        | CartIdOnly cartId ->
+            let ctx = Db.getContext()
+            Db.upgradeCarts (cartId, user.UserName) ctx
+            sessionStore (fun store -> store.set "cartid" "")
+        | _ -> succeed)
+    >>= sessionStore (fun store ->
+        store.set "username" user.UserName
+        >>= store.set "role" user.Role)
+    >>= returnPathOrHome
+
 let logon =
     choose [
         GET >>= (View.logon "" |> html)
@@ -186,17 +199,7 @@ let logon =
             let (Password password) = form.Password
             match Db.validateUser(form.Username, passHash password) ctx with
             | Some user ->
-                    Auth.authenticated Cookie.CookieLife.Session false 
-                    >>= session (function
-                        | CartIdOnly cartId ->
-                            let ctx = Db.getContext()
-                            Db.upgradeCarts (cartId, user.UserName) ctx
-                            sessionStore (fun store -> store.set "cartid" "")
-                        | _ -> succeed)
-                    >>= sessionStore (fun store ->
-                        store.set "username" user.UserName
-                        >>= store.set "role" user.Role)
-                    >>= returnPathOrHome
+                authenticateUser user
             | _ ->
                 View.logon "Username or password is invalid." |> html
         )
@@ -234,6 +237,22 @@ let removeFromCart albumId =
         | None -> 
             never)
 
+let register =
+    choose [
+        GET >>= (View.register "" |> html)
+        POST >>= bindToForm Form.register (fun form ->
+            let ctx = Db.getContext()
+            match Db.getUser form.Username ctx with
+            | Some existing -> 
+                View.register "Sorry this username is already taken. Try another one." |> html // From gitbook and legit not secure. This is an enumeration attack vector
+            | None ->
+                let (Password password) = form.Password
+                let email = form.Email.Address
+                let user = Db.newUser (form.Username, passHash password, email) ctx
+                authenticateUser user
+        )
+    ]
+
 let webPart =
     choose [
         path Path.home >>= html View.home
@@ -247,6 +266,7 @@ let webPart =
         path Path.Cart.overview >>= cart
         pathScan Path.Cart.addAlbum addToCart
         pathScan Path.Cart.removeAlbum removeFromCart
+        path Path.Account.register >>= register
         path Path.Account.logon >>= logon
         path Path.Account.logoff >>= reset
         pathRegex "(.*)\.(css|png|gif|js)" >>= Files.browseHome
