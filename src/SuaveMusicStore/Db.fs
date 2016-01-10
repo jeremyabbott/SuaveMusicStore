@@ -16,6 +16,7 @@ type Artist = DbContext.``[dbo].[Artists]Entity``
 type User = DbContext.``[dbo].[Users]Entity``
 type CartDetails = DbContext.``[dbo].[CartDetails]Entity``
 type Cart = DbContext.``[dbo].[Carts]Entity``
+type BestSeller = DbContext.``[dbo].[BestSellers]Entity``
 
 let firstOrNone s = s |> Seq.tryFind (fun _ -> true)
 
@@ -142,3 +143,6 @@ let placeOrder (username : string) (ctx : DbContext) =
         getCart cart.CartId cart.AlbumId ctx
         |> Option.iter (fun cart -> cart.Delete())
     ctx.SubmitUpdates()
+
+let getBestSellers (ctx : DbContext) : BestSeller list  =
+    ctx.``[dbo].[BestSellers]`` |> Seq.toList
