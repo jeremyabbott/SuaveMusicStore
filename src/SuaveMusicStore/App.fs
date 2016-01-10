@@ -190,6 +190,8 @@ let main argv =
             )
         ]
 
+    let cart = View.cart [] |> html
+
     let webPart =
         choose [
             path Path.home >>= html View.home
@@ -200,6 +202,7 @@ let main argv =
             path Path.Admin.createAlbum >>= admin createAlbum
             pathScan Path.Admin.editAlbum (fun id -> admin (editAlbum id))
             pathScan Path.Admin.deleteAlbum (fun id -> admin (deleteAlbum id))
+            path Path.Cart.overview >>= cart
             path Path.Account.logon >>= logon
             path Path.Account.logoff >>= reset
             pathRegex "(.*)\.(css|png|gif)" >>= Files.browseHome

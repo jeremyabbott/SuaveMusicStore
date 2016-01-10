@@ -10,6 +10,7 @@ let h1 xml = tag "h1" [] xml
 let h2 s = tag "h2" [] (text s)
 
 let aHref href = tag "a" ["href", href]
+let aHrefAttr href attr = tag "a" (("href", href) :: attr)
 
 let ul xml = tag "ul" [] (flatten xml)
 let ulAttr attr xml = tag "ul" attr (flatten xml)
@@ -83,6 +84,7 @@ let partNav =
     ulAttr ["id", "navlist"] [ 
         li (aHref Path.home (text "Home"))
         li (aHref Path.Store.overview (text "Store"))
+        li (aHref Path.Cart.overview (text "Cart"))
         li (aHref Path.Admin.manage (text "Admin"))
     ]
 
@@ -283,3 +285,43 @@ let logon msg = [
                           Xml = input (fun f -> <@ f.Password @>) [] } ] } ]
           SubmitText = "Log On" }
 ]
+
+let emptyCart = [
+    h2 "Your cart is empty"
+    text "Find some great music in our "
+    aHref Path.home (text "store")
+    text "!"
+]
+
+let nonEmptyCart (cart : Db.CartDetails list) = [
+    h2 "Review your cart:"
+    table [
+        yield tr [
+            for h in ["Album Name"; "Price (each)"; "Quantity"; ""] ->
+            th [text h]
+        ]
+        for item in cart ->
+            tr [
+                td [
+                    aHref (sprintf Path.Store.details item.AlbumId) (text item.AlbumTitle)
+                ]
+                td [
+                    text (formatDec item.Price)
+                ]
+                td [
+                    text (item.Count.ToString())
+                ]
+                td [
+                    aHrefAttr "#" ["class", "removeFromCart"; "data-id", item.AlbumId.ToString()] (text "Remove from cart") 
+                ]
+            ]
+        yield tr [
+            for d in ["Total"; ""; ""; cart |> List.sumBy (fun c -> c.Price * (decimal c.Count)) |> formatDec] ->
+            td [text d]
+        ]
+    ]
+]
+
+let cart = function
+    | [] -> emptyCart
+    | list -> nonEmptyCart list

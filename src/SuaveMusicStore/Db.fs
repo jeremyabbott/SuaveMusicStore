@@ -13,6 +13,7 @@ type Genre = DbContext.``[dbo].[Genres]Entity``
 type AlbumDetails = DbContext.``[dbo].[AlbumDetails]Entity``
 type Artist = DbContext.``[dbo].[Artists]Entity``
 type User = DbContext.``[dbo].[Users]Entity``
+type CartDetails = DbContext.``[dbo].[CartDetails]Entity``
 
 let firstOrNone s = s |> Seq.tryFind (fun _ -> true)
 
