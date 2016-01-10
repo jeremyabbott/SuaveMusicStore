@@ -96,3 +96,8 @@ let getCartsDetails cartId (ctx : DbContext) : CartDetails list =
             where (cart.CartId = cartId)
             select cart
     } |> Seq.toList
+
+let removeFromCart (cart : Cart) albumId (ctx : DbContext) = 
+    cart.Count <- cart.Count - 1
+    if cart.Count = 0 then cart.Delete()
+    ctx.SubmitUpdates()

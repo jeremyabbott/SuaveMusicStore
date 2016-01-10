@@ -217,6 +217,18 @@ let addToCart albumId =
                 succeed)
         >>= Redirection.FOUND Path.Cart.overview
 
+let removeFromCart albumId =
+    session (function
+    | NoSession -> never
+    | UserLoggedOn { Username = cartId } | CartIdOnly cartId ->
+        let ctx = Db.getContext()
+        match Db.getCart cartId albumId ctx with
+        | Some cart -> 
+            Db.removeFromCart cart albumId ctx
+            Db.getCartsDetails cartId ctx |> View.cart |> Html.flatten |> Html.xmlToString |> OK
+        | None -> 
+            never)
+
 let webPart =
     choose [
         path Path.home >>= html View.home
@@ -229,9 +241,10 @@ let webPart =
         pathScan Path.Admin.deleteAlbum (fun id -> admin (deleteAlbum id))
         path Path.Cart.overview >>= cart
         pathScan Path.Cart.addAlbum addToCart
+        pathScan Path.Cart.removeAlbum removeFromCart
         path Path.Account.logon >>= logon
         path Path.Account.logoff >>= reset
-        pathRegex "(.*)\.(css|png|gif)" >>= Files.browseHome
+        pathRegex "(.*)\.(css|png|gif|js)" >>= Files.browseHome
         html View.notFound
     ]
 

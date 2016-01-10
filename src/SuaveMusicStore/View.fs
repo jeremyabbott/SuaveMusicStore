@@ -297,6 +297,7 @@ let emptyCart = [
 
 let nonEmptyCart (cart : Db.CartDetails list) = [
     h2 "Review your cart:"
+    divId "update-message" [text " "]
     table [
         yield tr [
             for h in ["Album Name"; "Price (each)"; "Quantity"; ""] ->
@@ -322,6 +323,8 @@ let nonEmptyCart (cart : Db.CartDetails list) = [
             td [text d]
         ]
     ]
+    scriptAttr [ "type", "text/javascript"; " src", "/jquery-2.2.0.min.js" ] [ text "" ]
+    scriptAttr [ "type", "text/javascript"; " src", "/script.js" ] [ text "" ]
 ]
 
 let cart = function
