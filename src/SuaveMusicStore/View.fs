@@ -383,3 +383,15 @@ let checkout = [
           SubmitText = "Submit Order"
         }
 ]
+
+let checkoutComplete = [
+    h2 "Checkout Complete"
+    p [
+        text "Thanks for your order!"
+    ]
+    p [
+        text "How about shopping for some more music in our "
+        aHref Path.home (text "store")
+        text "?"
+    ]
+]
