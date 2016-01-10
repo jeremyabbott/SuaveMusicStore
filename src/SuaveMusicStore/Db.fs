@@ -1,5 +1,6 @@
 ﻿module SuaveMusicStore.Db
 
+open System
 open FSharp.Data.Sql
 
 type Sql = 
@@ -14,6 +15,7 @@ type AlbumDetails = DbContext.``[dbo].[AlbumDetails]Entity``
 type Artist = DbContext.``[dbo].[Artists]Entity``
 type User = DbContext.``[dbo].[Users]Entity``
 type CartDetails = DbContext.``[dbo].[CartDetails]Entity``
+type Cart = DbContext.``[dbo].[Carts]Entity``
 
 let firstOrNone s = s |> Seq.tryFind (fun _ -> true)
 
@@ -72,3 +74,18 @@ let validateUser (username, password) (ctx : DbContext) : User option =
             where (user.UserName = username && user.Password = password)
             select user
     } |> firstOrNone
+
+let getCart cartId albumId (ctx : DbContext) : Cart option =
+    query {
+        for cart in ctx.``[dbo].[Carts]`` do
+            where (cart.CartId = cartId && cart.AlbumId = albumId)
+            select cart
+    } |> firstOrNone
+
+let addToCart cartId albumId (ctx : DbContext)  =
+    match getCart cartId albumId ctx with
+    | Some cart ->
+        cart.Count <- cart.Count + 1
+    | None ->
+        ctx.``[dbo].[Carts]``.Create(albumId, cartId, 1, DateTime.UtcNow) |> ignore
+    ctx.SubmitUpdates()

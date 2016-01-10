@@ -30,6 +30,7 @@ type UserLoggedOnSession = {
 
 type Session = 
     | NoSession
+    | CartIdOnly of string
     | UserLoggedOn of UserLoggedOnSession
 
 let session f =
@@ -92,122 +93,137 @@ let html container =
 let bindToForm form handler =
     bindReq (bindForm form) handler BAD_REQUEST
 
-[<EntryPoint>]
-let main argv =
-    let browse =
-        request (fun r ->
-            match r.queryParam Path.Store.browseKey with
-            | Choice1Of2 genre ->
-                Db.getContext()
-                |> Db.getAlbumsForGenre genre
-                |> View.browse genre
-                |> html
-            | Choice2Of2 msg -> BAD_REQUEST msg)
+let browse =
+    request (fun r ->
+        match r.queryParam Path.Store.browseKey with
+        | Choice1Of2 genre ->
+            Db.getContext()
+            |> Db.getAlbumsForGenre genre
+            |> View.browse genre
+            |> html
+        | Choice2Of2 msg -> BAD_REQUEST msg)
 
-    let overview = warbler(fun _ ->
-        Db.getContext() 
-        |> Db.getGenres 
-        |> List.map (fun g -> g.Name) 
-        |> View.store 
-        |> html)
+let overview = warbler(fun _ ->
+    Db.getContext() 
+    |> Db.getGenres 
+    |> List.map (fun g -> g.Name) 
+    |> View.store 
+    |> html)
 
-    let details id =
-        match Db.getAlbumDetails id (Db.getContext()) with
-        | Some album -> html (View.details album)
-        | None -> never
+let details id =
+    match Db.getAlbumDetails id (Db.getContext()) with
+    | Some album -> html (View.details album)
+    | None -> never
 
-    let manage = warbler (fun _ ->
-        Db.getContext()
-        |> Db.getAlbumsDetails
-        |> View.manage
-        |> html)
+let manage = warbler (fun _ ->
+    Db.getContext()
+    |> Db.getAlbumsDetails
+    |> View.manage
+    |> html)
 
-    let deleteAlbum id =
-        let ctx = Db.getContext()
-        match Db.getAlbum id (ctx) with
-        | Some album ->
-            choose [
-                GET >>= warbler(fun _ ->
-                    html (View.deleteAlbum album.Title))
-                POST >>= warbler(fun _ ->
-                    Db.deleteAlbum album ctx
-                    Redirection.FOUND Path.Admin.manage)
-            ]
-        | None -> never
-
-    let createAlbum =
-        let ctx = Db.getContext()
+let deleteAlbum id =
+    let ctx = Db.getContext()
+    match Db.getAlbum id (ctx) with
+    | Some album ->
         choose [
-            GET >>= warbler (fun _ -> 
-                let genres =
-                    Db.getGenres ctx
-                    |> List.map (fun g -> decimal g.GenreId, g.Name)
-                let artists =
-                    Db.getArtists ctx
-                    |> List.map (fun a -> decimal a.ArtistId, a.Name)
-                html (View.createAlbum genres artists))
-            POST >>= bindToForm Form.album (fun form ->
-                Db.createAlbum (int form.ArtistId, int form.GenreId, form.Price, form.Title) ctx
+            GET >>= warbler(fun _ ->
+                html (View.deleteAlbum album.Title))
+            POST >>= warbler(fun _ ->
+                Db.deleteAlbum album ctx
                 Redirection.FOUND Path.Admin.manage)
         ]
+    | None -> never
 
-    let editAlbum id =
-        let ctx = Db.getContext()
-        match Db.getAlbum id ctx with
-        | Some album ->
-            choose [
-                GET >>= warbler (fun _ ->
-                    let genres = 
-                        Db.getGenres ctx 
-                        |> List.map (fun g -> decimal g.GenreId, g.Name)
-                    let artists = 
-                        Db.getArtists ctx
-                        |> List.map (fun g -> decimal g.ArtistId, g.Name)
-                    html (View.editAlbum album genres artists))
-                POST >>= bindToForm Form.album (fun form ->
-                    Db.updateAlbum album (int form.ArtistId, int form.GenreId, form.Price, form.Title) ctx
-                    Redirection.FOUND Path.Admin.manage)
-            ]
-        | None -> 
-            never
+let createAlbum =
+    let ctx = Db.getContext()
+    choose [
+        GET >>= warbler (fun _ -> 
+            let genres =
+                Db.getGenres ctx
+                |> List.map (fun g -> decimal g.GenreId, g.Name)
+            let artists =
+                Db.getArtists ctx
+                |> List.map (fun a -> decimal a.ArtistId, a.Name)
+            html (View.createAlbum genres artists))
+        POST >>= bindToForm Form.album (fun form ->
+            Db.createAlbum (int form.ArtistId, int form.GenreId, form.Price, form.Title) ctx
+            Redirection.FOUND Path.Admin.manage)
+    ]
 
-    let logon =
+let editAlbum id =
+    let ctx = Db.getContext()
+    match Db.getAlbum id ctx with
+    | Some album ->
         choose [
-            GET >>= (View.logon "" |> html)
-            POST >>= bindToForm Form.logon (fun form ->
-                let ctx = Db.getContext()
-                let (Password password) = form.Password
-                match Db.validateUser(form.Username, passHash password) ctx with
-                | Some user ->
-                        Auth.authenticated Cookie.CookieLife.Session false 
-                        >>= session (fun _ -> succeed)
-                        >>= sessionStore (fun store ->
-                            store.set "username" user.UserName
-                            >>= store.set "role" user.Role)
-                        >>= returnPathOrHome
-                | _ ->
-                    View.logon "Username or password is invalid." |> html
-            )
+            GET >>= warbler (fun _ ->
+                let genres = 
+                    Db.getGenres ctx 
+                    |> List.map (fun g -> decimal g.GenreId, g.Name)
+                let artists = 
+                    Db.getArtists ctx
+                    |> List.map (fun g -> decimal g.ArtistId, g.Name)
+                html (View.editAlbum album genres artists))
+            POST >>= bindToForm Form.album (fun form ->
+                Db.updateAlbum album (int form.ArtistId, int form.GenreId, form.Price, form.Title) ctx
+                Redirection.FOUND Path.Admin.manage)
         ]
+    | None -> 
+        never
 
-    let cart = View.cart [] |> html
+let logon =
+    choose [
+        GET >>= (View.logon "" |> html)
+        POST >>= bindToForm Form.logon (fun form ->
+            let ctx = Db.getContext()
+            let (Password password) = form.Password
+            match Db.validateUser(form.Username, passHash password) ctx with
+            | Some user ->
+                    Auth.authenticated Cookie.CookieLife.Session false 
+                    >>= session (fun _ -> succeed)
+                    >>= sessionStore (fun store ->
+                        store.set "username" user.UserName
+                        >>= store.set "role" user.Role)
+                    >>= returnPathOrHome
+            | _ ->
+                View.logon "Username or password is invalid." |> html
+        )
+    ]
 
-    let webPart =
-        choose [
-            path Path.home >>= html View.home
-            path Path.Store.overview >>= overview
-            path Path.Store.browse >>= browse
-            pathScan Path.Store.details details
-            path Path.Admin.manage >>= admin manage
-            path Path.Admin.createAlbum >>= admin createAlbum
-            pathScan Path.Admin.editAlbum (fun id -> admin (editAlbum id))
-            pathScan Path.Admin.deleteAlbum (fun id -> admin (deleteAlbum id))
-            path Path.Cart.overview >>= cart
-            path Path.Account.logon >>= logon
-            path Path.Account.logoff >>= reset
-            pathRegex "(.*)\.(css|png|gif)" >>= Files.browseHome
-            html View.notFound
-        ]
+let cart = View.cart [] |> html
+
+let addToCart albumId =
+    let ctx = Db.getContext()
+    session (function
+            | NoSession -> 
+                let cartId = Guid.NewGuid().ToString("N")
+                Db.addToCart cartId albumId ctx
+                sessionStore (fun store ->
+                    store.set "cartid" cartId)
+            | UserLoggedOn { Username = cartId } | CartIdOnly cartId ->
+                Db.addToCart cartId albumId ctx
+                succeed)
+        >>= Redirection.FOUND Path.Cart.overview
+
+let webPart =
+    choose [
+        path Path.home >>= html View.home
+        path Path.Store.overview >>= overview
+        path Path.Store.browse >>= browse
+        pathScan Path.Store.details details
+        path Path.Admin.manage >>= admin manage
+        path Path.Admin.createAlbum >>= admin createAlbum
+        pathScan Path.Admin.editAlbum (fun id -> admin (editAlbum id))
+        pathScan Path.Admin.deleteAlbum (fun id -> admin (deleteAlbum id))
+        path Path.Cart.overview >>= cart
+        pathScan Path.Cart.addAlbum addToCart
+        path Path.Account.logon >>= logon
+        path Path.Account.logoff >>= reset
+        pathRegex "(.*)\.(css|png|gif)" >>= Files.browseHome
+        html View.notFound
+    ]
+
+[<EntryPoint>]
+let main argv =
 
     startWebServer defaultConfig webPart
     0 // return an integer exit code
