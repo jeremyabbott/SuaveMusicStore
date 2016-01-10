@@ -101,3 +101,20 @@ let removeFromCart (cart : Cart) albumId (ctx : DbContext) =
     cart.Count <- cart.Count - 1
     if cart.Count = 0 then cart.Delete()
     ctx.SubmitUpdates()
+
+let getCarts cartId (ctx : DbContext) : Cart list =
+    query {
+        for cart in ctx.``[dbo].[Carts]`` do
+            where (cart.CartId = cartId)
+            select cart
+    } |> Seq.toList
+
+let upgradeCarts (cartId : string, username :string) (ctx : DbContext) =
+    for cart in getCarts cartId ctx do
+        match getCart username cart.AlbumId ctx with
+        | Some existing ->
+            existing.Count <- existing.Count +  cart.Count
+            cart.Delete()
+        | None ->
+            cart.CartId <- username
+    ctx.SubmitUpdates()
